@@ -1,0 +1,19 @@
+
+
+[Copy Kitten] python CopyKitten.py -v p -s lgaric@jix.im -mp "{'kava': 25, 'čaj': 20}" -jid babajaga123@jix.im -pwd lozinka
+
+[Copy Cat] python CopyCat.py -v k -s babajaga123@jix.im -mp "{'kava': 3, 'čaj': 2}" -jid lgaric@jix.im -pwd lgaric
+
+[Detective] python Detective.py -v p -s lgaric@jix.im -mp "{'kava': 25, 'čaj': 20}" -jid babajaga123@jix.im -pwd lozinka
+
+[Always Cheat] python AlwaysCheat.py -v k -s babajaga123@jix.im -mp "{'kava': 3, 'čaj': 2}" -jid lgaric@jix.im -pwd lgaric
+
+[Always Cooperate] python AlwaysCooperate.py -v p -s lgaric@jix.im -mp "{'kava': 25, 'čaj': 20}" -jid babajaga123@jix.im -pwd lozinka
+
+[Random] python Random.py -v k -s babajaga123@jix.im -mp "{'kava': 3, 'čaj': 2}" -jid lgaric@jix.im -pwd lgaric
+
+[Simpleton] python Simpleton.py -v p -s lgaric@jix.im -mp "{'kava': 25, 'čaj': 20}" -jid babajaga123@jix.im -pwd lozinka
+
+_____________
+
+[Organizator] python Organizator.py -v k -s babajaga123@jix.im -mp "{'kava': 3, 'čaj': 2}" -jid lgaric@jix.im -pwd lgaric
