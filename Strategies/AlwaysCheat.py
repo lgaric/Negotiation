@@ -11,13 +11,13 @@ from time import sleep
 import random
 
 """
-    Strategija pregovaranja: Copy Kitten
+    Strategija pregovaranja: Always Cheat
 
-    Pokretanje: python CopyKitten.py -m babajaga123@jix.im -id lgaaric@jix.im -pwd lgaric
+    Pokretanje: python AlwaysCheat.py -m babajaga123@jix.im -id lgaaric@jix.im -pwd lgaric
 
 """
 
-class CopyKitten(Agent):
+class AlwaysCheat(Agent):
 
     """Sudionik u pregovaranju."""
 
@@ -27,7 +27,7 @@ class CopyKitten(Agent):
 
     class FSMBehaviour(FSMBehaviour):
         async def on_start(self):
-            self.agent.say("Starting!")
+            self.agent.sayBold(f"Starting {self.agent.name}! ")
 
         async def on_end(self):
             self.agent.say("End!")
@@ -50,9 +50,9 @@ class CopyKitten(Agent):
         async def run(self):
             self.agent.msg = await self.receive(timeout=10)
             if self.agent.msg:
-                print("~~~~~~~~~~~~~~~~~~~~")
+                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
                 if "Start" in self.agent.msg.body:
-                    self.agent.say("Start score: 0")
+                    self.agent.sayBold("Start score: 0")
                     self.set_next_state("SendResponse")
                 elif "Stanje" in self.agent.msg.body:
                     self.set_next_state("ProcessCurrentScore")
@@ -67,19 +67,11 @@ class CopyKitten(Agent):
         async def run(self):
             self.agent.lastScore = self.agent.score
             self.agent.score = str(self.agent.msg.body).split(":", 1)[1]
-
-            # Opponent cheated
             if int(self.agent.lastScore) >= int(self.agent.score): # Handle errors
-                if self.agent.opponentCheatedOnce:
-                    self.agent.opponentCheatedTwice = True
-                else:
-                    self.agent.opponentCheatedOnce = True
-                    self.agent.opponentCheatedTwice = False
-            # Opponent cooperated
+                self.agent.opponentCheated = True
             else: 
-                self.agent.opponentCheatedOnce = False
-                self.agent.opponentCheatedTwice = False
-            self.agent.say(f"Current score: {self.agent.score}")
+                self.agent.opponentCheated = False
+            self.agent.sayBold(f"Current score: {self.agent.score}")
             
             self.set_next_state("NegotiateResponse")
 
@@ -89,10 +81,8 @@ class CopyKitten(Agent):
         """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
 
         async def run(self):
-            if self.agent.opponentCheatedTwice:
-                self.agent.cheat = True
-            else:
-                self.agent.cheat = False
+            self.agent.cheat = True # I always cheat!
+
             self.set_next_state("SendResponse")
 
 
@@ -126,17 +116,17 @@ class CopyKitten(Agent):
             self.set_next_state("AcceptMessage")
 
     def say(self, msg):
-        print(f"[Always Cheat] {self.name}: {msg}")
+        print(f"[Always Cheat] {msg}")
+
+    def sayBold(self, msg):
+        print('\033[1m' + f"[Always Cheat] {msg}" + '\033[0m')
 
     async def setup(self):
         fsm = self.FSMBehaviour()
-        self.say("Starting!")
         self.msg = Message()
         self.score = 0
         self.lastScore = 0
-        self.opponentCheatedOnce = False
-        self.opponentCheatedTwice = False
-
+        self.opponentCheated = False
         self.cheat = True # I always cheat!
 
         fsm.add_state(name="Registration", state=self.Registration(), initial=True)
@@ -164,5 +154,5 @@ if __name__ == '__main__':
     parser.add_argument("-pwd", type=str, help="Agent password")
     args = parser.parse_args()
 
-    agent = CopyKitten(args.id, args.pwd, MiddleMan=args.MiddleMan)
+    agent = AlwaysCheat(args.id, args.pwd, MiddleMan=args.MiddleMan)
     agent.start()

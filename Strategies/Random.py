@@ -27,7 +27,7 @@ class Random(Agent):
 
     class StatesBehaviour(FSMBehaviour):
         async def on_start(self):
-            self.agent.say("Starting!")
+            self.agent.sayBold(f"Starting {self.agent.name}! ")
 
         async def on_end(self):
             self.agent.say("End!")
@@ -50,9 +50,9 @@ class Random(Agent):
         async def run(self):
             self.agent.msg = await self.receive(timeout=10)
             if self.agent.msg:
-                print("~~~~~~~~~~~~~~~~~~~~")
+                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
                 if "Start" in self.agent.msg.body:
-                    self.agent.say("Start score: 0")
+                    self.agent.sayBold("Start score: 0")
                     self.set_next_state("SendResponse")
                 elif "Stanje" in self.agent.msg.body:
                     self.set_next_state("ProcessCurrentScore")
@@ -71,7 +71,7 @@ class Random(Agent):
                 self.agent.opponentCheated = True
             else: 
                 self.agent.opponentCheated = False
-            self.agent.say(f"Current score: {self.agent.score}")
+            self.agent.sayBold(f"Current score: {self.agent.score}")
             
             self.set_next_state("NegotiateResponse")
 
@@ -82,7 +82,6 @@ class Random(Agent):
 
         async def run(self):
             broj = random.randint(0,100)
-            self.agent.say(f"{broj}")
 
             if broj <= 50: # 50% - 50% Cheating - Cooperating
                 self.agent.cheat = True
@@ -121,11 +120,13 @@ class Random(Agent):
             self.set_next_state("AcceptMessage")
 
     def say(self, msg):
-        print(f"[Random] {self.name}: {msg}")
+        print(f"[Random] {msg}")
+
+    def sayBold(self, msg):
+        print('\033[1m' + f"[Random] {msg}" + '\033[0m')
 
     async def setup(self):
         fsm = self.StatesBehaviour()
-        self.say("Starting!")
         self.score = 0
         self.lastScore = 0
         self.opponentCheated = False

@@ -26,7 +26,7 @@ class MiddleMan(Agent):
 
     class PonasanjeKA(FSMBehaviour):
         async def on_start(self):
-            self.agent.say("Starting!")
+            self.agent.sayBold(f"Starting Middle Man! ")
 
         async def on_end(self):
             self.agent.say("End!")
@@ -37,14 +37,14 @@ class MiddleMan(Agent):
 
         async def run(self):
             # Cekam registraciju prvog agenta
-            self.agent.say("Cekam registraciju agenata!")
+            self.agent.say("Waiting agent registrations!")
             msg = Message()
             msg = await self.receive(timeout=100)
             if msg:
-                self.agent.say("Usao")
+                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
                 if msg.body in ["Registration"]:
                     self.agent.prviPregovarac = str(msg.sender).split("/", 1)[0]
-                    self.agent.say(f"1. Agent se registrirao: {self.agent.prviPregovarac}")
+                    self.agent.say(f"1. Agent {self.agent.prviPregovarac} has registered!")
 
             # Cekam registraciju drugog agenta
             msg = Message()
@@ -52,9 +52,9 @@ class MiddleMan(Agent):
             if msg:
                 if msg.body in ["Registration"]:
                     self.agent.drugiPregovarac = str(msg.sender).split("/", 1)[0]
-                    self.agent.say(f"2. Agent se registrirao: {self.agent.drugiPregovarac}")
+                    self.agent.say(f"2. Agent {self.agent.drugiPregovarac} has registered!")
             
-            self.agent.say("Pregovaranje pocinje!")
+            self.agent.sayBold("Negotiation begins!")
             self.set_next_state("PosaljiStartPregovaranja")
 
 
@@ -63,18 +63,17 @@ class MiddleMan(Agent):
 
         async def run(self):
             # Poruka prvog agenta
+            self.agent.say(f"Sending start messages!")
             msg = Message()
             msg = Message(
                 to=self.agent.prviPregovarac,
                 body="Start")
-            self.agent.say(f"Saljem poruku: {msg.body}")
             await self.send(msg)
 
             msg = Message()
             msg = Message(
                 to=self.agent.drugiPregovarac,
                 body="Start")
-            self.agent.say(f"Saljem poruku: {msg.body}")
             await self.send(msg)
             self.set_next_state("Pregovaranje")
 
@@ -84,32 +83,32 @@ class MiddleMan(Agent):
 
         async def run(self):
             # Poruka prvog agenta
-            print("~~~~~~~~~~~~~~~~~~~~")
+            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             print(f"# {self.agent.vrijeme}")
             agent1GoodMessage = False
             agent2GoodMessage = False
             msg1 = Message()
-            msg1 = await self.receive(timeout=20)
+            msg1 = await self.receive(timeout=100)
             if msg1:
-                sender = str(msg1.sender).split("/", 1)[0]
+                sender = str(msg1.sender).split("@", 1)[0]
                 if msg1.body in ["1", "0"]:
                     agent1GoodMessage = True
                     if int(msg1.body) == 1:
-                        self.agent.say(f"[{sender}] Cheating!")
+                        self.agent.say(f"Agent {sender} is cheating!")
                     else:
-                        self.agent.say(f"[{sender}] Cooperating!")
+                        self.agent.say(f"Agent {sender} is cooperating!")
 
             # Poruka drugog agenta
             msg2 = Message()
-            msg2 = await self.receive(timeout=20)
+            msg2 = await self.receive(timeout=100)
             if msg2:
-                sender = str(msg2.sender).split("/", 1)[0]
+                sender = str(msg2.sender).split("@", 1)[0]
                 if msg2.body in ["1", "0"]:
                     agent2GoodMessage = True
                     if int(msg2.body) == 1:
-                        self.agent.say(f"[{sender}] Cheating!\t")
+                        self.agent.say(f"Agent {sender} is cheating!")
                     else:
-                        self.agent.say(f"[{sender}] Cooperating!\t")
+                        self.agent.say(f"Agent {sender} is cooperating!")
 
             if agent1GoodMessage and agent2GoodMessage:
                 self.interpretiraj(msg1, msg2)
@@ -161,9 +160,12 @@ class MiddleMan(Agent):
             msg = Message(
                 to=self.agent.drugiPregovarac,
                 body=f"Stanje:{self.agent.pregovarac2Rezultat}")
-            self.agent.say("Current score:")
-            self.agent.say(f"{self.agent.prviPregovarac}: {self.agent.pregovarac1Rezultat}")
-            self.agent.say(f"{self.agent.drugiPregovarac}: {self.agent.pregovarac2Rezultat}")
+            print()
+            self.agent.sayBold("Current score:")
+            sender1 = str(self.agent.prviPregovarac).split("@", 1)[0]
+            sender2 = str(self.agent.drugiPregovarac).split("@", 1)[0]
+            self.agent.say(f"Agent {sender1}: {self.agent.pregovarac1Rezultat}")
+            self.agent.say(f"Agent {sender2}: {self.agent.pregovarac2Rezultat}")
             await self.send(msg)
             sleep(1)
             self.set_next_state("Pregovaranje")
@@ -174,26 +176,27 @@ class MiddleMan(Agent):
 
         async def run(self):
             # Poruka prvog agenta
+            self.agent.say(f"Sending end messages!")
             msg = Message()
             msg = Message(
                 to=self.agent.prviPregovarac,
                 body="Kraj")
-            self.agent.say(f"Saljem poruku: {msg.body}")
             await self.send(msg)
 
             msg = Message()
             msg = Message(
                 to=self.agent.drugiPregovarac,
                 body="Kraj")
-            self.agent.say(f"Saljem poruku: {msg.body}")
             await self.send(msg)
             sleep(1)
             await self.agent.stop()
 
 
     def say(self, msg):
-        print(f"[MiddleMan] {self.name}: {msg}")
-        #self.agent.say(f"[MiddleMan] {self.name}: {msg}")
+        print(f"[MiddleMan] {msg}")
+
+    def sayBold(self, msg):
+        print('\033[1m' + f"[MiddleMan] {msg}" + '\033[0m')
 
     async def setup(self):
         fsm = self.PonasanjeKA()

@@ -11,13 +11,13 @@ from time import sleep
 import random
 
 """
-    Strategija pregovaranja: Detective
+    Strategija pregovaranja: Grudger
 
-    Pokretanje: python Detective.py -m babajaga123@jix.im -id lgaaric@jix.im -pwd lgaric
+    Pokretanje: python Grudger.py -m babajaga123@jix.im -id lgaaric@jix.im -pwd lgaric
 
 """
 
-class Detective(Agent):
+class Grudger(Agent):
 
     """Sudionik u pregovaranju."""
 
@@ -27,7 +27,7 @@ class Detective(Agent):
 
     class FSMBehaviour(FSMBehaviour):
         async def on_start(self):
-            self.agent.say("Starting!")
+            self.agent.sayBold(f"Starting {self.agent.name}! ")
 
         async def on_end(self):
             self.agent.say("End!")
@@ -50,9 +50,9 @@ class Detective(Agent):
         async def run(self):
             self.agent.msg = await self.receive(timeout=10)
             if self.agent.msg:
-                print("~~~~~~~~~~~~~~~~~~~~")
+                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
                 if "Start" in self.agent.msg.body:
-                    self.agent.say("Start score: 0")
+                    self.agent.sayBold("Start score: 0")
                     self.set_next_state("SendResponse")
                 elif "Stanje" in self.agent.msg.body:
                     self.set_next_state("ProcessCurrentScore")
@@ -65,18 +65,12 @@ class Detective(Agent):
         """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
 
         async def run(self):
-            self.agent.testPhase += 1
             self.agent.lastScore = self.agent.score
             self.agent.score = str(self.agent.msg.body).split(":", 1)[1]
-
             if int(self.agent.lastScore) >= int(self.agent.score): # Handle errors
                 self.agent.opponentCheated = True
-                if self.agent.testPhase <= 4:
-                    self.agent.opponentCheatedInTestPhase = True
-            else:
-                self.agent.opponentCheated = False
-
-            self.agent.say(f"Current score: {self.agent.score}")
+            self.agent.sayBold(f"Current score: {self.agent.score}")
+            
             self.set_next_state("NegotiateResponse")
 
 
@@ -85,18 +79,10 @@ class Detective(Agent):
         """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
 
         async def run(self):
-            
-            if self.agent.testPhase in [1, 3, 4]:
-                self.agent.cheat = False
-            elif self.agent.testPhase == 2:
-                self.agent.cheat = True
-            elif self.agent.opponentCheatedInTestPhase: # If opponent cheated act lice Copy Cat
-                if self.agent.opponentCheated:
-                    self.agent.cheat = True
-                else:
-                    self.agent.cheat = False
-            else:                                       # Else act like Always Cheat
-                self.agent.cheat = True
+            if self.agent.opponentCheated:
+                self.agent.cheat = True 
+            else:
+                self.agent.cheat = False 
 
             self.set_next_state("SendResponse")
 
@@ -131,18 +117,18 @@ class Detective(Agent):
             self.set_next_state("AcceptMessage")
 
     def say(self, msg):
-        print(f"[Detective] {self.name}: {msg}")
+        print(f"[Grudger] {msg}")
+
+    def sayBold(self, msg):
+        print('\033[1m' + f"[Grudger] {msg}" + '\033[0m')
 
     async def setup(self):
         fsm = self.FSMBehaviour()
-        self.say("Starting!")
         self.msg = Message()
         self.score = 0
         self.lastScore = 0
         self.opponentCheated = False
-        self.opponentCheatedInTestPhase = False
-        self.cheat = False # Starting with cooperate, cheat, cooperate, cooperate!
-        self.testPhase = 1
+        self.cheat = False # I will start cooperating!
 
         fsm.add_state(name="Registration", state=self.Registration(), initial=True)
         fsm.add_state(name="AcceptMessage", state=self.AcceptMessage())
@@ -169,5 +155,5 @@ if __name__ == '__main__':
     parser.add_argument("-pwd", type=str, help="Agent password")
     args = parser.parse_args()
 
-    agent = Detective(args.id, args.pwd, MiddleMan=args.MiddleMan)
+    agent = Grudger(args.id, args.pwd, MiddleMan=args.MiddleMan)
     agent.start()
