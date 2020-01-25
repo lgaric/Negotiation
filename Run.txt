@@ -1,19 +1,19 @@
 
 
-[Copy Kitten] python CopyKitten.py -v p -s lgaric@jix.im -mp "{'kava': 25, 'čaj': 20}" -jid babajaga123@jix.im -pwd lozinka
+[Copy Kitten] python CopyKitten.py -o babajaga123@jix.im -jid lgaric@jix.im -pwd lgaric
 
-[Copy Cat] python CopyCat.py -v k -s babajaga123@jix.im -mp "{'kava': 3, 'čaj': 2}" -jid lgaric@jix.im -pwd lgaric
+[Copy Cat] python CopyCat.py -o babajaga123@jix.im -jid lgaric@jix.im -pwd lgaric
 
-[Detective] python Detective.py -v p -s lgaric@jix.im -mp "{'kava': 25, 'čaj': 20}" -jid babajaga123@jix.im -pwd lozinka
+[Detective] python Detective.py -o babajaga123@jix.im -jid lgaric@jix.im -pwd lgaric
 
-[Always Cheat] python AlwaysCheat.py -v k -s babajaga123@jix.im -mp "{'kava': 3, 'čaj': 2}" -jid lgaric@jix.im -pwd lgaric
+[Always Cheat] python AlwaysCheat.py -o babajaga123@jix.im -jid lgaric@jix.im -pwd lgaric
 
-[Always Cooperate] python AlwaysCooperate.py -v p -s lgaric@jix.im -mp "{'kava': 25, 'čaj': 20}" -jid babajaga123@jix.im -pwd lozinka
+[Always Cooperate] python AlwaysCooperate.py -o babajaga123@jix.im -jid lgaaric@jix.im -pwd lgaric
 
-[Random] python Random.py -v k -s babajaga123@jix.im -mp "{'kava': 3, 'čaj': 2}" -jid lgaric@jix.im -pwd lgaric
+[Random] python Random.py -o babajaga123@jix.im -jid lgaric@jix.im -pwd lgaric
 
-[Simpleton] python Simpleton.py -v p -s lgaric@jix.im -mp "{'kava': 25, 'čaj': 20}" -jid babajaga123@jix.im -pwd lozinka
+[Simpleton] python Simpleton.py -o babajaga123@jix.im -jid lgaric@jix.im -pwd lgaric
 
 _____________
 
-[Organizator] python Organizator.py -v k -s babajaga123@jix.im -mp "{'kava': 3, 'čaj': 2}" -jid lgaric@jix.im -pwd lgaric
+[Organizator] python MiddleMan.py -jid babajaga123@jix.im -pwd lozinka

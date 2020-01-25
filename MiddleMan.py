@@ -3,22 +3,21 @@
 
 import spade
 from spade.agent import Agent
-from spade.behaviour import OneShotBehaviour, CyclicBehaviour, State, FSMBehaviour
+from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
-from spade.template import Template
 
 import argparse
 from time import sleep
 import random
 
 """
-    Organizator!
+    MiddleMan!
 
-    Pokretanje: python Organizator.py -jid babajaga123@jix.im -pwd lozinka
+    Pokretanje: python MiddleMan.py -id babajaga123@jix.im -pwd lozinka
 
 """
 
-class Organizator(Agent):
+class MiddleMan(Agent):
 
     """Sudionik u pregovaranju."""
 
@@ -33,6 +32,7 @@ class Organizator(Agent):
             self.agent.say("End!")
 
     class RegistracijaAgenata(State):
+        
         """Registracija agenata za pregovaranje."""
 
         async def run(self):
@@ -42,7 +42,7 @@ class Organizator(Agent):
             msg = await self.receive(timeout=100)
             if msg:
                 self.agent.say("Usao")
-                if msg.body in ["Registracija"]:
+                if msg.body in ["Registration"]:
                     self.agent.prviPregovarac = str(msg.sender).split("/", 1)[0]
                     self.agent.say(f"1. Agent se registrirao: {self.agent.prviPregovarac}")
 
@@ -50,7 +50,7 @@ class Organizator(Agent):
             msg = Message()
             msg = await self.receive(timeout=100)
             if msg:
-                if msg.body in ["Registracija"]:
+                if msg.body in ["Registration"]:
                     self.agent.drugiPregovarac = str(msg.sender).split("/", 1)[0]
                     self.agent.say(f"2. Agent se registrirao: {self.agent.drugiPregovarac}")
             
@@ -86,27 +86,35 @@ class Organizator(Agent):
             # Poruka prvog agenta
             print("~~~~~~~~~~~~~~~~~~~~")
             print(f"# {self.agent.vrijeme}")
-            agent1DobraPoruka = False
-            agent2DobraPoruka = False
+            agent1GoodMessage = False
+            agent2GoodMessage = False
             msg1 = Message()
             msg1 = await self.receive(timeout=20)
             if msg1:
                 sender = str(msg1.sender).split("/", 1)[0]
-                self.agent.say(f"Agent {sender} poslao poruku: {msg1.body}")
                 if msg1.body in ["1", "0"]:
-                    agent1DobraPoruka = True
+                    agent1GoodMessage = True
+                    if int(msg1.body) == 1:
+                        self.agent.say(f"[{sender}] Cheating!")
+                    else:
+                        self.agent.say(f"[{sender}] Cooperating!")
 
             # Poruka drugog agenta
             msg2 = Message()
             msg2 = await self.receive(timeout=20)
             if msg2:
-                sender = str(msg1.sender).split("/", 1)[0]
-                self.agent.say(f"Agent {sender} poslao poruku: {msg2.body}")
-                if msg1.body in ["1", "0"]:
-                    agent2DobraPoruka = True
+                sender = str(msg2.sender).split("/", 1)[0]
+                if msg2.body in ["1", "0"]:
+                    agent2GoodMessage = True
+                    if int(msg2.body) == 1:
+                        self.agent.say(f"[{sender}] Cheating!\t")
+                    else:
+                        self.agent.say(f"[{sender}] Cooperating!\t")
 
-            if agent1DobraPoruka and agent2DobraPoruka:
+            if agent1GoodMessage and agent2GoodMessage:
                 self.interpretiraj(msg1, msg2)
+            
+
 
 
         def interpretiraj(self, msg1, msg2):
@@ -116,14 +124,13 @@ class Organizator(Agent):
                 self.set_next_state("PosaljiKrajPregovaranja")
             else:
                 self.set_next_state("PosaljiStanjePregovaranja")
-                self.agent.say("Koordiniraj poruke")
                 if str(msg1.sender).split("/", 1)[0] == self.agent.prviPregovarac:
                     self.zabiljeziRezultat(msg1, msg2)
                 else:
                     self.zabiljeziRezultat(msg2, msg1)
 
         def zabiljeziRezultat(self, pregovarac1, pregovarac2):
-            sleep(1)
+            
             if pregovarac1.body in ["1"] and pregovarac2.body in ["1"]:
                 self.agent.pregovarac1Rezultat += 2
                 self.agent.pregovarac2Rezultat += 2
@@ -154,10 +161,11 @@ class Organizator(Agent):
             msg = Message(
                 to=self.agent.drugiPregovarac,
                 body=f"Stanje:{self.agent.pregovarac2Rezultat}")
-            self.agent.say("Rezultat:")
+            self.agent.say("Current score:")
             self.agent.say(f"{self.agent.prviPregovarac}: {self.agent.pregovarac1Rezultat}")
             self.agent.say(f"{self.agent.drugiPregovarac}: {self.agent.pregovarac2Rezultat}")
             await self.send(msg)
+            sleep(1)
             self.set_next_state("Pregovaranje")
 
 
@@ -184,8 +192,8 @@ class Organizator(Agent):
 
 
     def say(self, msg):
-        print(f"[Organizator] {self.name}: {msg}")
-        #self.agent.say(f"[Organizator] {self.name}: {msg}")
+        print(f"[MiddleMan] {self.name}: {msg}")
+        #self.agent.say(f"[MiddleMan] {self.name}: {msg}")
 
     async def setup(self):
         fsm = self.PonasanjeKA()
@@ -211,9 +219,9 @@ class Organizator(Agent):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-jid", type=str, help="JID kupca", default="babajaga123@jix.im")
-    parser.add_argument("-pwd", type=str, help="Lozinka kupca", default="lozinka")
+    parser.add_argument("-id", type=str, help="MiddleMan ID", default="babajaga123@jix.im")
+    parser.add_argument("-pwd", type=str, help="MiddleMan Password", default="lozinka")
     args = parser.parse_args()
 
-    agent = Organizator(args.jid, args.pwd)
+    agent = MiddleMan(args.id, args.pwd)
     agent.start()
