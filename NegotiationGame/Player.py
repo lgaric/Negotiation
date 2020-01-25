@@ -11,15 +11,15 @@ from time import sleep
 import random
 
 """
-    Strategija pregovaranja: Player
+    Player
 
-    Pokretanje: python Player.py -m babajaga123@jix.im -id lgaaric@jix.im -pwd lgaric
+    Command line start: python Player.py -m babajaga123@jix.im -id lgaaric@jix.im -pwd lgaric
 
 """
 
 class Player(Agent):
 
-    """Sudionik u pregovaranju."""
+    """Negotiation agent."""
 
     def __init__(self, *args, MiddleMan, **kwargs):
         super().__init__(*args, **kwargs)
@@ -34,7 +34,8 @@ class Player(Agent):
             self.agent.say("End!")
 
     class Registration(State):
-        """Registriranje na pregovaranje kod MiddleMana."""
+        
+        """State for sending registration message to Middle Man."""
 
         async def run(self):
             msg = Message(
@@ -46,7 +47,8 @@ class Player(Agent):
             self.set_next_state("AcceptMessage")
 
     class AcceptMessage(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+
+        """State responsible for accepting and interpreting messages."""
 
         async def run(self):
             self.agent.msg = await self.receive(timeout=10)
@@ -67,7 +69,8 @@ class Player(Agent):
             
 
     class ProcessCurrentScore(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+        
+        """State for processing current score and checking if opponent cheated."""
 
         async def run(self):
             self.agent.testPhase += 1
@@ -88,7 +91,8 @@ class Player(Agent):
 
 
     class NegotiateResponse(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+        
+        """State which implements negotiation strategy and determines next response."""
 
         async def run(self):
             
@@ -96,7 +100,7 @@ class Player(Agent):
             while response not in ["0", "1"]:
                 response = input("[Player] What is your next move: ")
                 if response not in ["0", "1"]:
-                    self.agent.say("Please input numbers 0 or 1.")
+                    self.agent.sayBold("Please input numbers 0 or 1.")
 
             if int(response) == 0:
                 self.agent.cheat = True
@@ -108,7 +112,8 @@ class Player(Agent):
 
 
     class ProcessResult(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+        
+        """State for processing results at the end of negotiations and determines final outcome."""
 
         async def run(self):
             self.agent.say("End of negotiation!")
@@ -126,7 +131,8 @@ class Player(Agent):
 
 
     class SendResponse(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+
+        """State for sending response message back to Middle Man."""
 
         async def run(self):
             if(self.agent.cheat):
@@ -181,7 +187,7 @@ class Player(Agent):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--MiddleMan", type=str, help="ID MiddleMana pregovaranja", default="babajaga123@jix.im")
+    parser.add_argument("-m", "--MiddleMan", type=str, help="MiddleMan unique ID", default="babajaga123@jix.im")
     parser.add_argument("-id", type=str, help="Agent ID")
     parser.add_argument("-pwd", type=str, help="Agent password")
     args = parser.parse_args()

@@ -13,19 +13,19 @@ import random
 """
     MiddleMan!
 
-    Pokretanje: python MiddleMan.py -id babajaga123@jix.im -pwd lozinka
+    Command line start: python MiddleMan.py -id babajaga123@jix.im -pwd lozinka
 
 """
 
 class MiddleMan(Agent):
 
-    """Sudionik u pregovaranju."""
+    """Middle Man between two negotiation sides."""
 
     def __init__(self, *args, rounds, **kwargs):
         super().__init__(*args, **kwargs)
         self.rounds = rounds
 
-    class PonasanjeKA(FSMBehaviour):
+    class FSMBehaviour(FSMBehaviour):
         async def on_start(self):
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             self.agent.sayBold(f"Starting Middle Man! ")
@@ -33,22 +33,23 @@ class MiddleMan(Agent):
         async def on_end(self):
             self.agent.say("End!")
 
-    class RegistracijaAgenata(State):
+    class AgentsRegistration(State):
         
-        """Registracija agenata za pregovaranje."""
+        """State responsible for registering 2 agents (negotiation sides)."""
 
         async def run(self):
-            # Cekam registraciju prvog agenta
             self.agent.say("Waiting agent registrations!")
+
+            # First agent registration
             msg = Message()
             msg = await self.receive(timeout=100)
             if msg:
                 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
                 if msg.body in ["Registration"]:
-                    self.agent.prviPregovarac = str(msg.sender).split("/", 1)[0]
-                    self.agent.say(f"1. Agent {self.agent.prviPregovarac} has registered!")
+                    self.agent.firstAgentName = str(msg.sender).split("/", 1)[0]
+                    self.agent.say(f"1. Agent {self.agent.firstAgentName} has registered!")
 
-            # Cekam registraciju drugog agenta
+            # Second agent registration
             msg = Message()
             msg = await self.receive(timeout=100)
             if msg:
@@ -57,18 +58,19 @@ class MiddleMan(Agent):
                     self.agent.say(f"2. Agent {self.agent.drugiPregovarac} has registered!")
             
             self.agent.sayBold("Negotiation begins!")
-            self.set_next_state("PosaljiStartPregovaranja")
+            self.set_next_state("SendStartNegotiations")
 
 
-    class PosaljiStartPregovaranja(State):
-        """Stanje koje javlja pregovaracima da proces pregovaranja pocinje."""
+    class SendStartNegotiations(State):
+
+        """State for sending start messages with end scores to both agents."""
 
         async def run(self):
             # Poruka prvog agenta
             self.agent.say(f"Sending start messages!")
             msg = Message()
             msg = Message(
-                to=self.agent.prviPregovarac,
+                to=self.agent.firstAgentName,
                 body="Start")
             await self.send(msg)
 
@@ -77,14 +79,15 @@ class MiddleMan(Agent):
                 to=self.agent.drugiPregovarac,
                 body="Start")
             await self.send(msg)
-            self.set_next_state("Pregovaranje")
+            self.set_next_state("Negotiations")
 
 
-    class Pregovaranje(State):
-        """Stanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+    class Negotiations(State):
+
+        """State responsible for processing messages and leading negotiation process."""
 
         async def run(self):
-            # Poruka prvog agenta
+            # First agent message
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             print(f"# {self.agent.rounds}")
             agent1GoodMessage = False
@@ -100,7 +103,7 @@ class MiddleMan(Agent):
                     else:
                         self.agent.say(f"Agent {sender} is cooperating!")
 
-            # Poruka drugog agenta
+            # Second agent message
             msg2 = Message()
             msg2 = await self.receive(timeout=100)
             if msg2:
@@ -113,83 +116,86 @@ class MiddleMan(Agent):
                         self.agent.say(f"Agent {sender} is cooperating!")
 
             if agent1GoodMessage and agent2GoodMessage:
-                self.interpretiraj(msg1, msg2)
+                self.interpret(msg1, msg2)
             
 
 
 
-        def interpretiraj(self, msg1, msg2):
+        def interpret(self, msg1, msg2):
             self.agent.rounds = int(self.agent.rounds) - 1
             if int(self.agent.rounds) == 0:
                 self.agent.sayBold("Negotiation ends!")
-                self.set_next_state("PosaljiKrajPregovaranja")
+                self.set_next_state("SendEndMessage")
             else:
-                self.set_next_state("PosaljiStanjePregovaranja")
+                self.set_next_state("SendNegotiationScores")
 
-            if str(msg1.sender).split("/", 1)[0] == self.agent.prviPregovarac:
-                self.zabiljeziRezultat(msg1, msg2)
+            if str(msg1.sender).split("/", 1)[0] == self.agent.firstAgentName:
+                self.saveScore(msg1, msg2)
             else:
-                self.zabiljeziRezultat(msg2, msg1)
+                self.saveScore(msg2, msg1)
 
-        def zabiljeziRezultat(self, pregovarac1, pregovarac2):
+        def saveScore(self, agent1, agent2):
             
-            if pregovarac1.body in ["1"] and pregovarac2.body in ["1"]:
-                self.agent.pregovarac1Rezultat += 2
-                self.agent.pregovarac2Rezultat += 2
-                self.agent.stanjePregovaraca = 11
-            elif pregovarac1.body in ["1"] and pregovarac2.body in ["0"]:
-                self.agent.pregovarac1Rezultat -= 1
-                self.agent.pregovarac2Rezultat += 3
-                self.agent.stanjePregovaraca = 10
-            elif pregovarac1.body in ["0"] and pregovarac2.body in ["1"]:
-                self.agent.pregovarac1Rezultat += 3
-                self.agent.pregovarac2Rezultat -= 1
-                self.agent.stanjePregovaraca = 1
+            if agent1.body in ["1"] and agent2.body in ["1"]:
+                self.agent.agent1Score += 2
+                self.agent.agent2Score += 2
+                self.agent.currentNegotiationState = 11 # Both agents are cooperating
+            elif agent1.body in ["1"] and agent2.body in ["0"]:
+                self.agent.agent1Score -= 1
+                self.agent.agent2Score += 3
+                self.agent.currentNegotiationState = 10 # Only first agent is cooperating
+            elif agent1.body in ["0"] and agent2.body in ["1"]:
+                self.agent.agent1Score += 3
+                self.agent.agent2Score -= 1
+                self.agent.currentNegotiationState = 1 # Only second agent is coooperating
             else:
-                self.agent.stanjePregovaraca = 0
+                self.agent.currentNegotiationState = 0 # No one is cooperating
 
-    class PosaljiStanjePregovaranja(State):
-        """Stanje koje javlja pregovaracima stanje pregovaranja (jesu li prevareni ili nisu)"""
+    class SendNegotiationScores(State):
+
+        """State which sends current scores to agents"""
 
         async def run(self):
-            # Poruka prvog agenta
+            # Message from first agent
             msg = Message()
             msg = Message(
-                to=self.agent.prviPregovarac,
-                body=f"Stanje:{self.agent.pregovarac1Rezultat}")
+                to=self.agent.firstAgentName,
+                body=f"Stanje:{self.agent.agent1Score}")
             await self.send(msg)
 
+            # Message from second agent
             msg = Message()
             msg = Message(
                 to=self.agent.drugiPregovarac,
-                body=f"Stanje:{self.agent.pregovarac2Rezultat}")
+                body=f"Stanje:{self.agent.agent2Score}")
             print()
             self.agent.sayBold("Current score:")
-            sender1 = str(self.agent.prviPregovarac).split("@", 1)[0]
+            sender1 = str(self.agent.firstAgentName).split("@", 1)[0]
             sender2 = str(self.agent.drugiPregovarac).split("@", 1)[0]
-            self.agent.say(f"Agent {sender1}: {self.agent.pregovarac1Rezultat}")
-            self.agent.say(f"Agent {sender2}: {self.agent.pregovarac2Rezultat}")
+            self.agent.say(f"Agent {sender1}: {self.agent.agent1Score}")
+            self.agent.say(f"Agent {sender2}: {self.agent.agent2Score}")
             await self.send(msg)
             sleep(1)
-            self.set_next_state("Pregovaranje")
+            self.set_next_state("Negotiations")
 
 
-    class PosaljiKrajPregovaranja(State):
-        """Stanje koje javlja pregovaracima stanje pregovaranja (jesu li prevareni ili nisu)"""
+    class SendEndMessage(State):
+        
+        """State for sending end messages with end scores to both agents"""
 
         async def run(self):
             # End message -> End:MyScore:OpponentsScore
             self.agent.say(f"Sending end messages!")
             msg = Message()
             msg = Message(
-                to=self.agent.prviPregovarac,
-                body=f"End:{self.agent.pregovarac1Rezultat}:{self.agent.pregovarac2Rezultat}")
+                to=self.agent.firstAgentName,
+                body=f"End:{self.agent.agent1Score}:{self.agent.agent2Score}")
             await self.send(msg)
 
             msg = Message()
             msg = Message(
                 to=self.agent.drugiPregovarac,
-                body=f"End:{self.agent.pregovarac2Rezultat}:{self.agent.pregovarac1Rezultat}")
+                body=f"End:{self.agent.agent2Score}:{self.agent.agent1Score}")
             
             self.printFinalResults()
             await self.send(msg)
@@ -199,15 +205,15 @@ class MiddleMan(Agent):
         def printFinalResults(self):
             print()
             self.agent.sayBold("Final score:")
-            sender1 = str(self.agent.prviPregovarac).split("@", 1)[0]
+            sender1 = str(self.agent.firstAgentName).split("@", 1)[0]
             sender2 = str(self.agent.drugiPregovarac).split("@", 1)[0]
-            self.agent.say(f"Agent {sender1}: {self.agent.pregovarac1Rezultat}")
-            self.agent.say(f"Agent {sender2}: {self.agent.pregovarac2Rezultat}")
+            self.agent.say(f"Agent {sender1}: {self.agent.agent1Score}")
+            self.agent.say(f"Agent {sender2}: {self.agent.agent2Score}")
 
             print()
-            if int(self.agent.pregovarac1Rezultat) > int(self.agent.pregovarac2Rezultat):
+            if int(self.agent.agent1Score) > int(self.agent.agent2Score):
                 self.agent.sayBold(f"Agent {sender1} has gained more from this negotiations!")
-            elif int(self.agent.pregovarac2Rezultat) > int(self.agent.pregovarac1Rezultat):
+            elif int(self.agent.agent2Score) > int(self.agent.agent1Score):
                 self.agent.sayBold(f"Agent {sender2} has gained more from this negotiations!")
             else:
                 self.agent.sayBold("Both agents gained the same from this negotiations! Perfect match!:)")
@@ -220,23 +226,23 @@ class MiddleMan(Agent):
         print('\033[1m' + f"[MiddleMan] {msg}" + '\033[0m')
 
     async def setup(self):
-        fsm = self.PonasanjeKA()
+        fsm = self.FSMBehaviour()
         self.vrijeme = 20
-        self.pregovarac1Rezultat = 0
-        self.pregovarac2Rezultat = 0
-        self.stanjePregovaraca = 0
+        self.agent1Score = 0
+        self.agent2Score = 0
+        self.currentNegotiationState = 0
 
-        fsm.add_state(name="RegistracijaAgenata", state=self.RegistracijaAgenata(), initial=True)
-        fsm.add_state(name="PosaljiStartPregovaranja", state=self.PosaljiStartPregovaranja())
-        fsm.add_state(name="PosaljiStanjePregovaranja", state=self.PosaljiStanjePregovaranja())
-        fsm.add_state(name="PosaljiKrajPregovaranja", state=self.PosaljiKrajPregovaranja())
-        fsm.add_state(name="Pregovaranje", state=self.Pregovaranje())
+        fsm.add_state(name="AgentsRegistration", state=self.AgentsRegistration(), initial=True)
+        fsm.add_state(name="SendStartNegotiations", state=self.SendStartNegotiations())
+        fsm.add_state(name="SendNegotiationScores", state=self.SendNegotiationScores())
+        fsm.add_state(name="SendEndMessage", state=self.SendEndMessage())
+        fsm.add_state(name="Negotiations", state=self.Negotiations())
 
-        fsm.add_transition(source="RegistracijaAgenata", dest="PosaljiStartPregovaranja")
-        fsm.add_transition(source="PosaljiStartPregovaranja", dest="Pregovaranje")
-        fsm.add_transition(source="Pregovaranje", dest="PosaljiKrajPregovaranja")
-        fsm.add_transition(source="Pregovaranje", dest="PosaljiStanjePregovaranja")
-        fsm.add_transition(source="PosaljiStanjePregovaranja", dest="Pregovaranje")
+        fsm.add_transition(source="AgentsRegistration", dest="SendStartNegotiations")
+        fsm.add_transition(source="SendStartNegotiations", dest="Negotiations")
+        fsm.add_transition(source="Negotiations", dest="SendEndMessage")
+        fsm.add_transition(source="Negotiations", dest="SendNegotiationScores")
+        fsm.add_transition(source="SendNegotiationScores", dest="Negotiations")
 
         self.add_behaviour(fsm)
 

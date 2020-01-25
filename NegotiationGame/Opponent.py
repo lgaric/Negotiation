@@ -11,15 +11,15 @@ from time import sleep
 import random
 
 """
-    Strategija pregovaranja: Opponent
+    Opponent
 
-    Pokretanje: python Opponent.py -m babajaga123@jix.im -id lgaaric@jix.im -pwd lgaric
+    Command line start: python Opponent.py -m babajaga123@jix.im -id lgaaric@jix.im -pwd lgaric
 
 """
 
 class Opponent(Agent):
 
-    """Sudionik u pregovaranju."""
+    """Negotiation agent."""
 
     def __init__(self, *args, MiddleMan, **kwargs):
         super().__init__(*args, **kwargs)
@@ -33,7 +33,8 @@ class Opponent(Agent):
             self.agent.say("End!")
 
     class Registration(State):
-        """Registriranje na pregovaranje kod MiddleMana."""
+        
+        """State for sending registration message to Middle Man."""
 
         async def run(self):
             msg = Message(
@@ -45,7 +46,8 @@ class Opponent(Agent):
             self.set_next_state("AcceptMessage")
 
     class AcceptMessage(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+
+        """State responsible for accepting and interpreting messages."""
 
         async def run(self):
             self.agent.msg = await self.receive(timeout=100)
@@ -64,7 +66,8 @@ class Opponent(Agent):
             
 
     class ProcessCurrentScore(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+        
+        """State for processing current score and checking if opponent cheated."""
 
         async def run(self):
             self.agent.testPhase += 1
@@ -90,7 +93,8 @@ class Opponent(Agent):
 
 
     class NegotiateResponse(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+
+        """State which implements negotiation strategy and determines next response."""
 
         async def run(self): 
             if "AlwaysCheat" in self.agent.myStrategy: # TODO Simplify
@@ -170,7 +174,8 @@ class Opponent(Agent):
 
 
     class ProcessResult(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+        
+        """State for processing results at the end of negotiations and determines final outcome."""
 
         async def run(self):
             self.agent.say("End of negotiation!")
@@ -188,7 +193,8 @@ class Opponent(Agent):
 
 
     class SendResponse(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+
+        """State for sending response message back to Middle Man."""
 
         async def run(self):
             if(self.agent.cheat):
@@ -260,7 +266,7 @@ class Opponent(Agent):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--MiddleMan", type=str, help="ID MiddleMana pregovaranja", default="babajaga123@jix.im")
+    parser.add_argument("-m", "--MiddleMan", type=str, help="MiddleMan unique ID", default="babajaga123@jix.im")
     parser.add_argument("-id", type=str, help="Agent ID")
     parser.add_argument("-pwd", type=str, help="Agent password")
     args = parser.parse_args()

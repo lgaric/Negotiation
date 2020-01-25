@@ -11,15 +11,15 @@ from time import sleep
 import random
 
 """
-    Strategija pregovaranja: Always Cooperate
+    Negotiation Strategy: Always Cooperate
 
-    Pokretanje: python AlwaysCooperate.py -m babajaga123@jix.im -id lgaric@jix.im -pwd lgaric
+    Command line start: python AlwaysCooperate.py -m babajaga123@jix.im -id lgaric@jix.im -pwd lgaric
 
 """
 
 class AlwaysCooperate(Agent):
 
-    """Sudionik u pregovaranju."""
+    """Negotiation agent."""
 
     def __init__(self, *args, MiddleMan, **kwargs):
         super().__init__(*args, **kwargs)
@@ -34,7 +34,8 @@ class AlwaysCooperate(Agent):
             self.agent.say("End!")
 
     class Registration(State):
-        """Registriranje na pregovaranje kod MiddleMana."""
+        
+        """State for sending registration message to Middle Man."""
 
         async def run(self):
             msg = Message(
@@ -46,7 +47,8 @@ class AlwaysCooperate(Agent):
             self.set_next_state("AcceptMessage")
 
     class AcceptMessage(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+
+        """State responsible for accepting and interpreting messages."""
 
         async def run(self):
             self.agent.msg = await self.receive(timeout=100)
@@ -65,7 +67,8 @@ class AlwaysCooperate(Agent):
             
 
     class ProcessCurrentScore(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+        
+        """State for processing current score and checking if opponent cheated."""
 
         async def run(self):
             self.agent.lastScore = self.agent.score
@@ -81,7 +84,8 @@ class AlwaysCooperate(Agent):
 
 
     class NegotiateResponse(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+        
+        """State which implements negotiation strategy and determines next response."""
 
         async def run(self):
             self.cheat = False # I never cheat! :)
@@ -91,7 +95,8 @@ class AlwaysCooperate(Agent):
 
 
     class ProcessResult(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+        
+        """State for processing results at the end of negotiations and determines final outcome."""
 
         async def run(self):
             self.agent.say("End of negotiation!")
@@ -109,7 +114,8 @@ class AlwaysCooperate(Agent):
 
 
     class SendResponse(State):
-        """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
+
+        """State for sending response message back to Middle Man."""
 
         async def run(self):
             if(self.agent.cheat):
@@ -160,7 +166,7 @@ class AlwaysCooperate(Agent):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--MiddleMan", type=str, help="ID MiddleMana pregovaranja", default="babajaga123@jix.im")
+    parser.add_argument("-m", "--MiddleMan", type=str, help="MiddleMan unique ID", default="babajaga123@jix.im")
     parser.add_argument("-id", type=str, help="Agent ID")
     parser.add_argument("-pwd", type=str, help="Agent password")
     args = parser.parse_args()
