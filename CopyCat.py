@@ -52,6 +52,7 @@ class CopyCat(Agent):
             if self.agent.msg:
                 print("~~~~~~~~~~~~~~~~~~~~")
                 if "Start" in self.agent.msg.body:
+                    self.agent.say("Start score: 0")
                     self.set_next_state("SendResponse")
                 elif "Stanje" in self.agent.msg.body:
                     self.set_next_state("ProcessCurrentScore")
