@@ -11,13 +11,13 @@ from time import sleep
 import random
 
 """
-    Strategija pregovaranja: Opponent
+    Strategija pregovaranja: Player
 
-    Pokretanje: python Opponent.py -m babajaga123@jix.im -id lgaaric@jix.im -pwd lgaric
+    Pokretanje: python Player.py -m babajaga123@jix.im -id lgaaric@jix.im -pwd lgaric
 
 """
 
-class Opponent(Agent):
+class Player(Agent):
 
     """Sudionik u pregovaranju."""
 
@@ -27,6 +27,7 @@ class Opponent(Agent):
 
     class FSMBehaviour(FSMBehaviour):
         async def on_start(self):
+            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             self.agent.sayBold(f"Starting {self.agent.name}! ")
 
         async def on_end(self):
@@ -48,15 +49,19 @@ class Opponent(Agent):
         """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
 
         async def run(self):
-            self.agent.msg = await self.receive(timeout=100)
+            self.agent.msg = await self.receive(timeout=10)
             if self.agent.msg:
                 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
                 if "Start" in self.agent.msg.body:
+                    print('\033[1m' + "\t\tRules: 0 = Cheat | 1 = Cooperate" + '\033[0m')
+                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
                     self.agent.sayBold("Start score: 0")
-                    self.set_next_state("SendResponse")
+                    self.set_next_state("NegotiateResponse")
                 elif "Stanje" in self.agent.msg.body:
                     self.set_next_state("ProcessCurrentScore")
-                elif "Kraj" in self.agent.msg.body:
+                elif "End" in self.agent.msg.body:
+                    self.agent.score = str(self.agent.msg.body).split(":", 2)[1]
+                    self.agent.opponentsScore = str(self.agent.msg.body).split(":", 2)[2]
                     self.set_next_state("ProcessResult")
                     
             
@@ -70,19 +75,14 @@ class Opponent(Agent):
             self.agent.score = str(self.agent.msg.body).split(":", 1)[1]
 
             if int(self.agent.lastScore) >= int(self.agent.score): # Handle errors
+                self.agent.opponentCheated = True
                 if self.agent.testPhase <= 4:
-                    self.agent.opponentCheatedInTestPhase = True # Detective
+                    self.agent.opponentCheatedInTestPhase = True
+            else:
+                self.agent.opponentCheated = False
 
-                if self.agent.opponentCheatedOnce:
-                    self.agent.opponentCheatedTwice = True
-                else:
-                    self.agent.opponentCheatedOnce = True
-                    self.agent.opponentCheatedTwice = False
-            elif "Grudger" not in self.agent.myStrategy: # Grudger never forgets!
-                self.agent.opponentCheatedOnce = False
-                self.agent.opponentCheatedTwice = False
-
-            self.agent.sayBold(f"Current score: {self.agent.score}")
+            self.difference = int(self.agent.score) - int(self.agent.lastScore)
+            self.agent.sayBold(f"Current score: {self.agent.score} ({self.difference})")
             self.set_next_state("NegotiateResponse")
 
 
@@ -90,80 +90,20 @@ class Opponent(Agent):
     class NegotiateResponse(State):
         """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
 
-        async def run(self): 
-            if "AlwaysCheat" in self.agent.myStrategy: # TODO Simplify
-                self.AlwaysCheat()
-            elif "AlwaysCooperate" in self.agent.myStrategy:
-                self.AlwaysCooperate()
-            elif "CopyCat" in self.agent.myStrategy:
-                self.CopyCat()
-            elif "CopyKitten" in self.agent.myStrategy:
-                self.CopyKitten()
-            elif "Detective" in self.agent.myStrategy:
-                self.Detective()
-            elif "Grudger" in self.agent.myStrategy:
-                self.Grudger()
-            elif "Radnom" in self.agent.myStrategy:
-                self.Radnom()
-            elif "Simpleton" in self.agent.myStrategy:
-                self.Simpleton()
-            elif "AlwaysCheat" in self.agent.myStrategy:
-                self.AlwaysCheat()
-    
+        async def run(self):
+            
+            response = "-1"
+            while response not in ["0", "1"]:
+                response = input("[Player] What is your next move: ")
+                if response not in ["0", "1"]:
+                    self.agent.say("Please input numbers 0 or 1.")
+
+            if int(response) == 0:
+                self.agent.cheat = True
+            else:
+                self.agent.cheat = False
+
             self.set_next_state("SendResponse")
-
-
-        def AlwaysCheat(self):
-            self.agent.cheat = True
-
-        def AlwaysCooperate(self):
-            self.agent.cheat = False
-
-        def CopyCat(self):
-            if self.agent.opponentCheatedOnce:
-                self.agent.cheat = True
-            else:
-                self.agent.cheat = False
-
-        def CopyKitten(self):
-            if self.agent.opponentCheatedTwice:
-                self.agent.cheat = True
-            else:
-                self.agent.cheat = False
-
-        def Detective(self):
-            if self.agent.testPhase in [1, 3, 4]:
-                self.agent.cheat = False
-            elif self.agent.testPhase == 2:
-                self.agent.cheat = True
-            elif self.agent.opponentCheatedInTestPhase: # If opponent cheated act lice Copy Cat
-                if self.agent.opponentCheatedOnce:
-                    self.agent.cheat = True
-                else:
-                    self.agent.cheat = False
-            else:                                       # Else act like Always Cheat
-                self.agent.cheat = True
-
-        def Grudger(self):
-            if self.agent.opponentCheatedOnce: # TODO If cheated once, always cheat!!
-                self.agent.cheat = True 
-            else:
-                self.agent.cheat = False 
-
-        def Random(self):
-            broj = random.randint(0,100)
-            if broj <= 50: # 50% - 50% Cheating - Cooperating
-                self.agent.cheat = True
-            else:
-                self.agent.cheat = False
-
-        def Simpleton(self):
-            if self.agent.opponentCheatedOnce:
-                self.agent.cheat = not self.agent.cheatedPreviousMove
-            else:
-                self.agent.cheat = self.agent.cheatedPreviousMove
-
-            self.agent.cheatedPreviousMove = self.agent.cheat
 
 
 
@@ -171,8 +111,17 @@ class Opponent(Agent):
         """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
 
         async def run(self):
-            self.agent.say("Stop!")
-            self.agent.say(f"My result: {self.agent.score}")
+            self.agent.say("End of negotiation!")
+            print()
+            self.agent.sayBold("Results:")
+            self.agent.say(f"Me: {self.agent.score}")
+            self.agent.say(f"Opponent: {self.agent.opponentsScore}")
+            if int(self.agent.score) > int(self.agent.opponentsScore):
+                self.agent.sayBold("I gained more in this negotiations! :)")
+            elif int(self.agent.score) == int(self.agent.opponentsScore):
+                self.agent.sayBold("Perfect agreement for both sides!")
+            else:
+                self.agent.sayBold("I lost more in this negotiations! :(")
             await self.agent.stop()
 
 
@@ -196,25 +145,21 @@ class Opponent(Agent):
             self.set_next_state("AcceptMessage")
 
     def say(self, msg):
-        print(f"[Opponent] {msg}")
+        print(f"[Player] {msg}")
 
     def sayBold(self, msg):
-        print('\033[1m' + f"[Opponent] {msg}" + '\033[0m')
+        print('\033[1m' + f"[Player] {msg}" + '\033[0m')
 
     async def setup(self):
         fsm = self.FSMBehaviour()
         self.msg = Message()
         self.score = 0
         self.lastScore = 0
-        self.opponentCheatedOnce = False
-        self.opponentCheatedTwive = False
+        self.opponentCheated = False
         self.opponentCheatedInTestPhase = False
-        self.cheatedPreviousMove = False
+        self.opponentsScore = 0
         self.cheat = False # Starting with cooperate, cheat, cooperate, cooperate!
         self.testPhase = 1
-        strategies = ["AlwaysCheat", "AlwaysCooperate", "CopyCat", "CopyKitten", "Detective", "Grudger", "Random", "Simpleton"]
-        self.myStrategy = random.choice(strategies)
-        self.say(f"Selected strategy: {self.myStrategy}")
 
         fsm.add_state(name="Registration", state=self.Registration(), initial=True)
         fsm.add_state(name="AcceptMessage", state=self.AcceptMessage())
@@ -224,7 +169,7 @@ class Opponent(Agent):
         fsm.add_state(name="SendResponse", state=self.SendResponse())
 
         fsm.add_transition(source="Registration", dest="AcceptMessage")
-        fsm.add_transition(source="AcceptMessage", dest="SendResponse")
+        fsm.add_transition(source="AcceptMessage", dest="NegotiateResponse")
         fsm.add_transition(source="AcceptMessage", dest="ProcessCurrentScore")
         fsm.add_transition(source="AcceptMessage", dest="ProcessResult")
         fsm.add_transition(source="ProcessCurrentScore", dest="NegotiateResponse")
@@ -241,5 +186,5 @@ if __name__ == '__main__':
     parser.add_argument("-pwd", type=str, help="Agent password")
     args = parser.parse_args()
 
-    agent = Opponent(args.id, args.pwd, MiddleMan=args.MiddleMan)
+    agent = Player(args.id, args.pwd, MiddleMan=args.MiddleMan)
     agent.start()

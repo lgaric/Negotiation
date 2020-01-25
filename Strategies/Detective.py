@@ -27,6 +27,7 @@ class Detective(Agent):
 
     class FSMBehaviour(FSMBehaviour):
         async def on_start(self):
+            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             self.agent.sayBold(f"Starting {self.agent.name}! ")
 
         async def on_end(self):
@@ -48,7 +49,7 @@ class Detective(Agent):
         """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
 
         async def run(self):
-            self.agent.msg = await self.receive(timeout=10)
+            self.agent.msg = await self.receive(timeout=100)
             if self.agent.msg:
                 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
                 if "Start" in self.agent.msg.body:
@@ -56,7 +57,9 @@ class Detective(Agent):
                     self.set_next_state("SendResponse")
                 elif "Stanje" in self.agent.msg.body:
                     self.set_next_state("ProcessCurrentScore")
-                elif "Kraj" in self.agent.msg.body:
+                elif "End" in self.agent.msg.body:
+                    self.agent.score = str(self.agent.msg.body).split(":", 2)[1]
+                    self.agent.opponentsScore = str(self.agent.msg.body).split(":", 2)[2]
                     self.set_next_state("ProcessResult")
                     
             
@@ -106,8 +109,17 @@ class Detective(Agent):
         """Ponasanje koje vodi proces pregovaranja i obraduje poruke iz procesa pregovaranja."""
 
         async def run(self):
-            self.agent.say("Stop!")
-            self.agent.say(f"My result: {self.agent.score}")
+            self.agent.say("End of negotiation!")
+            print()
+            self.agent.sayBold("Results:")
+            self.agent.say(f"Me: {self.agent.score}")
+            self.agent.say(f"Opponent: {self.agent.opponentsScore}")
+            if int(self.agent.score) > int(self.agent.opponentsScore):
+                self.agent.sayBold("I gained more in this negotiations! :)")
+            elif int(self.agent.score) == int(self.agent.opponentsScore):
+                self.agent.sayBold("Perfect agreement for both sides!")
+            else:
+                self.agent.sayBold("I lost more in this negotiations! :(")
             await self.agent.stop()
 
 
@@ -141,6 +153,7 @@ class Detective(Agent):
         self.msg = Message()
         self.score = 0
         self.lastScore = 0
+        self.opponentsScore = 0
         self.opponentCheated = False
         self.opponentCheatedInTestPhase = False
         self.cheat = False # Starting with cooperate, cheat, cooperate, cooperate!

@@ -21,11 +21,13 @@ class MiddleMan(Agent):
 
     """Sudionik u pregovaranju."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, rounds, **kwargs):
         super().__init__(*args, **kwargs)
+        self.rounds = rounds
 
     class PonasanjeKA(FSMBehaviour):
         async def on_start(self):
+            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             self.agent.sayBold(f"Starting Middle Man! ")
 
         async def on_end(self):
@@ -84,7 +86,7 @@ class MiddleMan(Agent):
         async def run(self):
             # Poruka prvog agenta
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            print(f"# {self.agent.vrijeme}")
+            print(f"# {self.agent.rounds}")
             agent1GoodMessage = False
             agent2GoodMessage = False
             msg1 = Message()
@@ -93,7 +95,7 @@ class MiddleMan(Agent):
                 sender = str(msg1.sender).split("@", 1)[0]
                 if msg1.body in ["1", "0"]:
                     agent1GoodMessage = True
-                    if int(msg1.body) == 1:
+                    if int(msg1.body) == 0:
                         self.agent.say(f"Agent {sender} is cheating!")
                     else:
                         self.agent.say(f"Agent {sender} is cooperating!")
@@ -105,7 +107,7 @@ class MiddleMan(Agent):
                 sender = str(msg2.sender).split("@", 1)[0]
                 if msg2.body in ["1", "0"]:
                     agent2GoodMessage = True
-                    if int(msg2.body) == 1:
+                    if int(msg2.body) == 0:
                         self.agent.say(f"Agent {sender} is cheating!")
                     else:
                         self.agent.say(f"Agent {sender} is cooperating!")
@@ -117,16 +119,17 @@ class MiddleMan(Agent):
 
 
         def interpretiraj(self, msg1, msg2):
-            self.agent.vrijeme -= 1
-            if self.agent.vrijeme == 0:
-                self.agent.say(f"Pregovaranje zavrseno!")
+            self.agent.rounds = int(self.agent.rounds) - 1
+            if int(self.agent.rounds) == 0:
+                self.agent.sayBold("Negotiation ends!")
                 self.set_next_state("PosaljiKrajPregovaranja")
             else:
                 self.set_next_state("PosaljiStanjePregovaranja")
-                if str(msg1.sender).split("/", 1)[0] == self.agent.prviPregovarac:
-                    self.zabiljeziRezultat(msg1, msg2)
-                else:
-                    self.zabiljeziRezultat(msg2, msg1)
+
+            if str(msg1.sender).split("/", 1)[0] == self.agent.prviPregovarac:
+                self.zabiljeziRezultat(msg1, msg2)
+            else:
+                self.zabiljeziRezultat(msg2, msg1)
 
         def zabiljeziRezultat(self, pregovarac1, pregovarac2):
             
@@ -175,21 +178,39 @@ class MiddleMan(Agent):
         """Stanje koje javlja pregovaracima stanje pregovaranja (jesu li prevareni ili nisu)"""
 
         async def run(self):
-            # Poruka prvog agenta
+            # End message -> End:MyScore:OpponentsScore
             self.agent.say(f"Sending end messages!")
             msg = Message()
             msg = Message(
                 to=self.agent.prviPregovarac,
-                body="Kraj")
+                body=f"End:{self.agent.pregovarac1Rezultat}:{self.agent.pregovarac2Rezultat}")
             await self.send(msg)
 
             msg = Message()
             msg = Message(
                 to=self.agent.drugiPregovarac,
-                body="Kraj")
+                body=f"End:{self.agent.pregovarac2Rezultat}:{self.agent.pregovarac1Rezultat}")
+            
+            self.printFinalResults()
             await self.send(msg)
             sleep(1)
             await self.agent.stop()
+
+        def printFinalResults(self):
+            print()
+            self.agent.sayBold("Final score:")
+            sender1 = str(self.agent.prviPregovarac).split("@", 1)[0]
+            sender2 = str(self.agent.drugiPregovarac).split("@", 1)[0]
+            self.agent.say(f"Agent {sender1}: {self.agent.pregovarac1Rezultat}")
+            self.agent.say(f"Agent {sender2}: {self.agent.pregovarac2Rezultat}")
+
+            print()
+            if int(self.agent.pregovarac1Rezultat) > int(self.agent.pregovarac2Rezultat):
+                self.agent.sayBold(f"Agent {sender1} has gained more from this negotiations!")
+            elif int(self.agent.pregovarac2Rezultat) > int(self.agent.pregovarac1Rezultat):
+                self.agent.sayBold(f"Agent {sender2} has gained more from this negotiations!")
+            else:
+                self.agent.sayBold("Both agents gained the same from this negotiations! Perfect match!:)")
 
 
     def say(self, msg):
@@ -224,7 +245,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-id", type=str, help="MiddleMan ID", default="babajaga123@jix.im")
     parser.add_argument("-pwd", type=str, help="MiddleMan Password", default="lozinka")
+    parser.add_argument("-r", "--rounds", type=str, help="Number of negotiation rounds", default=20)
     args = parser.parse_args()
 
-    agent = MiddleMan(args.id, args.pwd)
+    agent = MiddleMan(args.id, args.pwd, rounds=args.rounds)
     agent.start()
